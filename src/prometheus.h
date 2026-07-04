@@ -68,8 +68,8 @@ int handle_client(const int client_fd) {
 
   ssize_t const bytes_received = recv(client_fd, request, REQUEST_BUFFER_SIZE, 0);
   if (bytes_received < MINIMUM_REQUEST_SIZE) {
-    PERROR("Request too short (only %zu bytes)\n", bytes_received);
-    strlcpy(response, "HTTP/1.1 400 Bad Request\r\n", RESPONSE_BUFFER_SIZE);
+    PERROR("Request too short (only %zd bytes)\n", bytes_received);
+    close(client_fd);
     return EXIT_FAILURE;
   }
 
