@@ -21,6 +21,8 @@ lint:
 
 test: growatt_exporter $(TESTS)
 	$(CC) -v $(shell pkg-config --libs --cflags libbsd libmodbus) -Wall -Werror -o tests/mock-server $(TESTS)
+	./growatt_exporter tests/config-mqtt-missing-username.conf >/tmp/growatt-mqtt-config-error.log 2>&1; test $$? -eq 1
+	grep -q "Missing required 'mqtt.username' setting in configuration file" /tmp/growatt-mqtt-config-error.log
 	timeout 30 mosquitto_sub -h test.mosquitto.org -p 1884 -u rw -P readwrite -t homeassistant/sensor/growatt/state -d &
 	./tests/mock-server &
 	./growatt_exporter config-example.conf || true

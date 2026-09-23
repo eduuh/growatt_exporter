@@ -27,6 +27,33 @@ static int usage(char const program[static 1]) {
   return EXIT_FAILURE;
 }
 
+static int require_config_string(const char *value, char const setting[static 1]) {
+  if (value != NULL && value[0] != '\0') {
+    return EXIT_SUCCESS;
+  }
+
+  LOG(LOG_ERROR, "Missing required '%s' setting in configuration file", setting);
+  return EXIT_FAILURE;
+}
+
+static int validate_mqtt_config(const mqtt_config *config) {
+  if (!config->port) {
+    return EXIT_SUCCESS;
+  }
+
+  if (require_config_string(config->host, "mqtt.host")) {
+    return EXIT_FAILURE;
+  }
+  if (require_config_string(config->username, "mqtt.username")) {
+    return EXIT_FAILURE;
+  }
+  if (require_config_string(config->password, "mqtt.password")) {
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
+
 static int join_thread(thrd_t const *thread, char const label[static 1]) {
   int value = 0;
   int code = thrd_join(*thread, &value);
@@ -80,6 +107,10 @@ int parse_config(config *config, config_t *parser, char const *filename) {
   config_lookup_string(parser, "mqtt.username", &config->mqtt_config.username);
   config_lookup_string(parser, "mqtt.password", &config->mqtt_config.password);
 
+  if (validate_mqtt_config(&config->mqtt_config)) {
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
 }
 
@@ -96,7 +127,7 @@ int main(int argc, char *argv[argc + 1]) {
     return usage(argv[0]);
   }
 
-  config config;
+  config config = {0};
   config_t parser_config;
   config_init(&parser_config);
   if (parse_config(&config, &parser_config, argv[1])) {

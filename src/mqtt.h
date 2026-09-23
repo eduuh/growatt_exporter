@@ -31,6 +31,8 @@ typedef struct __attribute__((aligned(32))) {
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static struct mosquitto *client = NULL;
 
+static int string_is_empty(const char *value) { return value == NULL || value[0] == '\0'; }
+
 static void stop_mqtt_thread(void) {
   mosquitto_disconnect(client);
   mosquitto_destroy(client);
@@ -64,14 +66,19 @@ int start_mqtt_thread(void *config_ptr) {
 
   mosquitto_connect_callback_set(client, connection_callback);
 
-  assert(strlen(config->username) > 0);
-  assert(strlen(config->password) > 0);
+  if (string_is_empty(config->username) || string_is_empty(config->password)) {
+    LOG(LOG_ERROR, "MQTT username/password must be configured");
+    return EXIT_FAILURE;
+  }
   if (mosquitto_username_pw_set(client, config->username, config->password) != MOSQ_ERR_SUCCESS) {
     LOG(LOG_ERROR, "Cannot set username/password");
     return EXIT_FAILURE;
   }
 
-  assert(strlen(config->host) > 0);
+  if (string_is_empty(config->host)) {
+    LOG(LOG_ERROR, "MQTT host must be configured");
+    return EXIT_FAILURE;
+  }
   if (mosquitto_connect(client, config->host, config->port, MQTT_KEEPALIVE) != MOSQ_ERR_SUCCESS) {
     PERROR("MQTT client could not connect to %s:%" PRIu16, config->host, config->port);
     return EXIT_FAILURE;

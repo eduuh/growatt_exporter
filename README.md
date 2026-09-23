@@ -55,6 +55,8 @@ mqtt = {
 }
 ```
 
+If you enable MQTT, set `host`, `port`, `username`, and `password`. Only `id` is optional.
+
 4. Create systemd service file `/etc/systemd/system/growatt-exporter.service`:
 
 ```systemd
